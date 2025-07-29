@@ -1,0 +1,24 @@
+# Arquivo de segredos e variáveis de ambiente
+.env
+
+# Arquivos de cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pastas de ambiente virtual
+venv/
+env/
+.venv/
+
+# Arquivos de IDEs e editores
+.vscode/
+.idea/
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Pasta root - Geralmente não deve ser incluída no controle de versão
+root/
