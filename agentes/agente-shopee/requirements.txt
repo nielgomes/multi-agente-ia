@@ -1,0 +1,6 @@
+# orquestrador/requirements.txt
+flask
+google-generativeai
+# Dependências específicas para raspagem de dados
+requests
+beautifulsoup4

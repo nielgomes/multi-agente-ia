@@ -1,4 +1,4 @@
-# agentes/agente-pesquisador/Dockerfile
+# agentes/agente-codificador/src/main.pyS
 import os
 import json
 import google.generativeai as genai

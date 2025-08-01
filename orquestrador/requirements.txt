@@ -1,0 +1,8 @@
+# orquestrador/requirements.txt
+flask
+requests
+google-generativeai
+# --- Novas Bibliotecas ---
+langchain
+langchain-google-genai
+langchain-community
