@@ -14,7 +14,9 @@ WORKDIR /app
 COPY ${SERVICE_PATH}/requirements.txt .
 
 # Instalação de Dependências
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -m nltk.downloader punkt \
+    && python -m nltk.downloader punkt_tab
 
 # Copia do Código Fonte
 COPY ${SERVICE_PATH}/src .

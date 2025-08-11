@@ -1,119 +1,76 @@
-# agentes/agente-pesquisador/Dockerfile
+# agentes/agente-pesquisador/src/main.py
 import os
 import json
+import chromadb
 import google.generativeai as genai
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from flask import Flask, request, jsonify
 
-# Configuração inicial
+# --- CONFIGURAÇÃO INICIAL ---
 app = Flask(__name__)
-try:
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-except AttributeError:
-    print("ERRO: GEMINI_API_KEY não encontrada.")
-    exit()
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-REGISTRY_DIR = os.path.join(BASE_DIR, 'registry')
-
+REGISTRY_DIR = '/app/registry'
+client = chromadb.HttpClient(host='chromadb', port=8000)
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.environ.get("GEMINI_API_KEY"))
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def build_system_prompt_from_json(config: dict) -> str:
-    """
-    Constrói uma única string de 'system_instruction' a partir de um JSON estruturado.
-    """
-    # Pega as seções principais do JSON
-    persona = config.get("persona", {})
     instruction = config.get("system_instruction", {})
-    tone = config.get("tone_of_voice", "")
-    output_format = config.get("output_format", "")
+    rules_list = instruction.get("rules", [])
+    rules_text = "\n".join(rules_list)
+    full_prompt = f"""# Contexto\n{instruction.get("context", "")}\n\n# Objetivo Principal\n{instruction.get("goal", "")}\n\n# Regras\n{rules_text}"""
+    return full_prompt.strip()
 
-    # Monta a lista de papéis/regras
-    roles_list = instruction.get("roles", [])
-    roles_text = "\n".join(roles_list)
-
-    # Concatena todas as partes em um único prompt Markdown
-    # Usar Markdown ajuda o modelo a entender melhor a estrutura.
-    full_prompt = f"""
-# PERSONA
-**Título:** {persona.get("title", "")}
-**Nome:** {persona.get("name", "")}
-**Descrição:** {persona.get("description", "")}
-
-# INSTRUÇÕES DO SISTEMA
-## Contexto
-{instruction.get("context", "")}
-
-## Objetivo Principal
-{instruction.get("goal", "")}
-
-## Regras e Papéis
-{roles_text}
-
-# TOM DE VOZ
-{tone}
-
-# FORMATO DE SAÍDA OBRIGATÓRIO
-{output_format}
-"""
-    return full_prompt
-
-
+# --- ROTA PRINCIPAL ---
 @app.route("/executar", methods=["POST"])
 def executar_tarefa():
-    """
-    Endpoint genérico que executa uma tarefa baseada em um arquivo de configuração.
-    """
-    data = request.get_json()
-    config_dir_name = data.get("config_dir_name")
-    user_prompt = data.get("user_prompt")
-
-    if not config_dir_name or not user_prompt:
-        return jsonify({"erro": "Campos 'config_dir_name' e 'user_prompt' são obrigatórios"}), 400
-
-    config_path = os.path.join(REGISTRY_DIR, config_dir_name, 'config.json')
-
     try:
-        # 1. Carrega a configuração do agente a partir do arquivo JSON
+        data = request.get_json()
+        config_dir_name = data.get("config_dir_name")
+        user_prompt = data.get("user_prompt")
+        collection_name = f"colecao_{config_dir_name}"
+        contexto = ""
+
+        # PASSO 1: Tenta buscar na base de conhecimento. É a fonte primária.
+        try:
+            collection = client.get_collection(name=collection_name)
+            results = collection.query(query_texts=[user_prompt], n_results=3)
+            if results and results['documents'] and results['documents'][0]:
+                contexto = "\n\n".join(results['documents'][0])
+                print(f"✅ Contexto recuperado da coleção '{collection_name}'.")
+            else:
+                print(f"⚠️ Nenhum documento relevante encontrado.")
+        except Exception as e:
+            print(f"⚠️ Aviso: Não foi possível buscar na coleção '{collection_name}'. Erro: {e}")
+
+        # PASSO 2: Carrega a personalidade do agente
+        config_path = os.path.join(REGISTRY_DIR, config_dir_name, 'config.json')
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
+        system_instruction = build_system_prompt_from_json(config)
         
-        persona_title = config.get("persona", {}).get("title", "Desconhecida")
-        print(f"Personalidade '{persona_title}' carregada.")
+        # PASSO 3: Monta o prompt final (com ou sem contexto)
+        if contexto:
+            # Se TEMOS contexto do RAG, forçamos o modelo a usá-lo
+            final_prompt = f"""Use ESTRITAMENTE o contexto abaixo para responder a pergunta. Se a resposta não estiver no contexto, diga que não encontrou a informação na base de conhecimento.
+Contexto:
+---
+{contexto}
+---
+Pergunta do Usuário: {user_prompt}
+Resposta:"""
+        else:
+            # Se NÃO TEMOS contexto, o agente age com seu conhecimento geral
+            final_prompt = user_prompt
 
-        # 2. Constrói o prompt do sistema dinamicamente
-        system_prompt = build_system_prompt_from_json(config)
-        
-        # 3. Carrega arquivos da base de conhecimento (lógica mantida)
-        uploaded_files = []
-        kb_dir_path = os.path.join(REGISTRY_DIR, config_dir_name, config.get("knowledge_base_dir", ""))
-        
-        if os.path.exists(kb_dir_path) and os.path.isdir(kb_dir_path):
-            # AINDA VAMOS IMPLEMENTAR A LÓGICA DE UPLOAD AQUI.
-            # USAMOS 'PASS' PARA EVITAR O ERRO DE SINTAXE.
-            pass
-        
-        # 4. Configura o modelo dinamicamente
-        model_name = config.get("persona", {}).get("model_name", "gemini-1.5-flash")
-        temperature = config.get("persona", {}).get("temperature", 0.7)
-        
+        # PASSO 4: Chama o Gemini
         model = genai.GenerativeModel(
-            model_name=model_name,
-            system_instruction=system_prompt,
-            generation_config={"temperature": temperature}
+            model_name=config.get("persona", {}).get("model_name", "gemini-1.5-pro-latest"),
+            system_instruction=system_instruction
         )
-
-        # 5. Executa o prompt
-        prompt_content = [user_prompt] + uploaded_files
-        response = model.generate_content(prompt_content)
+        response = model.generate_content(final_prompt)
         
-        # ... (lógica para deletar arquivos permanece a mesma)
-
         return jsonify({"resultado": response.text})
 
-    except FileNotFoundError:
-        return jsonify({"erro": f"Arquivo de configuração não encontrado em: {config_path}"}), 404
     except Exception as e:
+        print(f"❌ Erro Crítico no Agente-Pesquisador: {e}")
         return jsonify({"erro": str(e)}), 500
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    app.run(host='0.0.0.0', port=port)

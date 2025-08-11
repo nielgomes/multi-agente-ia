@@ -8,13 +8,10 @@ services:
     container_name: orquestrador
     ports:
       - "5000:5000"
-    command: ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"] # <-- CORRIGIDO
     volumes:
-      # --- MUDANÇA CRUCIAL AQUI ---
-      # Mapeia apenas o arquivo de código, deixando o resto do contêiner intacto.
       - ./orquestrador/src/main.py:/app/main.py
       - ./orquestrador/src/quais_modelos.py:/app/quais_modelos.py
-      # Este mapeamento agora vai funcionar corretamente.
       - ./registry:/app/registry
     environment:
       - FLASK_DEBUG=1
@@ -22,10 +19,11 @@ services:
     env_file:
       - ./.env
     depends_on:
-      #- agente-pesquisador
+      - agente-pesquisador
       #- agente-escritor
       #- agente-codificador
-      - agente-shopee
+      #- agente-shopee
+      - indexer
 
   agente-pesquisador:
     build:
@@ -34,7 +32,7 @@ services:
       args:
         SERVICE_PATH: ./agentes/agente-pesquisador
     container_name: agente-pesquisador
-    command: ["flask", "run", "--host=0.0.0.0", "--port=5001"]
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5001"] # <-- CORRIGIDO
     volumes:
       - ./agentes/agente-pesquisador/src/main.py:/app/main.py
       - ./registry:/app/registry
@@ -51,7 +49,7 @@ services:
       args:
         SERVICE_PATH: ./agentes/agente-escritor
     container_name: agente-escritor
-    command: ["flask", "run", "--host=0.0.0.0", "--port=5002"]
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5002"] # <-- CORRIGIDO
     volumes:
       - ./agentes/agente-escritor/src/main.py:/app/main.py
       - ./registry:/app/registry
@@ -68,7 +66,7 @@ services:
       args:
         SERVICE_PATH: ./agentes/agente-codificador
     container_name: agente-codificador
-    command: ["flask", "run", "--host=0.0.0.0", "--port=5003"]
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5003"] # <-- CORRIGIDO
     volumes:
       - ./agentes/agente-codificador/src/main.py:/app/main.py
       - ./registry:/app/registry
@@ -85,7 +83,7 @@ services:
       args:
         SERVICE_PATH: ./agentes/agente-shopee
     container_name: agente-shopee
-    command: ["flask", "run", "--host=0.0.0.0", "--port=5004"]
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5004"] # <-- CORRIGIDO
     volumes:
       - ./agentes/agente-shopee/src/main.py:/app/main.py
       - ./registry:/app/registry
@@ -94,3 +92,38 @@ services:
       - FLASK_APP=main
     env_file:
       - ./.env
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    ports:
+      - "6333:6333" # Porta padrão do Qdrant
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+  indexer:
+    build:
+      context: .
+      dockerfile: ./indexer/Dockerfile
+      args:
+        SERVICE_PATH: ./indexer
+    container_name: indexer
+    ports:
+      - "5005:5000"
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"]
+    volumes:
+      # --- CAMINHOS DOS VOLUMES CORRIGIDOS ---
+      - ./indexer/src/main.py:/app/main.py
+      - ./indexer/src/chunker_customizado.py:/app/chunker_customizado.py
+      - ./indexer/src/refatorador_rag.py:/app/refatorador_rag.py
+      - ./registry:/app/registry
+    environment:
+      - FLASK_APP=main
+      - FLASK_DEBUG=1
+    env_file:
+      - ./.env
+    depends_on:
+      - qdrant
+
+volumes:
+  qdrant-data:

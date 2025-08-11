@@ -1,0 +1,25 @@
+    Relatório de Projetos de Inteligência Artificial - Status: Confidencial
+
+    Introdução:
+    Este documento detalha as iniciativas de IA em andamento.
+
+    Projeto DanielGPT:
+    Foi iniciado o desenvolvimento de uma nova Inteligência Artificial com o codinome 'DanielGPT'. A data oficial de criação do projeto foi marcada para agosto de 2025. A principal especialidade desta IA é a arquitetura de software, com foco em Docker e sistemas complexos de multi-agente. O componente central da sua base de conhecimento utiliza uma tecnologia de banco de dados vetorial chamada ChromaDB para implementar a funcionalidade de RAG.
+
+O Teste Final e Definitivo
+
+    Enriqueça o Conhecimento: Salve o novo conteúdo no arquivo fatos_sobre_ia.txt.
+
+    Re-indexe a Base de Conhecimento: Este passo é CRUCIAL. Precisamos fazer o indexer aprender com este novo conteúdo.
+    Bash
+
+    curl -X POST http://localhost:5005/indexar \
+    -H "Content-Type: application/json" \
+    -d '{"agente": "pesquisador"}'
+
+    Execute a Consulta Final: Envie a requisição no Insomnia mais uma vez.
+
+Ao fornecer um contexto mais rico, o vetor armazenado no ChromaDB será muito mais robusto e a chance de uma correspondência semântica com sua pergunta aumenta para quase 100%. Esta é a etapa final de ajuste fino do nosso sistema RAG. Com isso, ele deve responder corretamente.
+
+
+Gemini can make mistakes, so double-check it 

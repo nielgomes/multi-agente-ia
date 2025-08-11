@@ -1,1 +1,7 @@
 # agentes/agente-pesquisador/requirements.txt
+
+flask
+google-generativeai
+python-dotenv
+langchain-google-genai # Para os embeddings
+chromadb-client      # Para conectar ao ChromaDB

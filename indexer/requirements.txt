@@ -1,0 +1,28 @@
+#indexer/requirements.txt
+
+# Framework da API
+flask
+
+# Cliente para o Vector DB
+qdrant-client
+
+# Framework de IA e integrações
+langchain
+langchain-google-genai
+langchain-community
+
+# --- LINHA ADICIONADA ---
+# Dependência necessária para a função de embedding do ChromaDB
+google-generativeai
+
+# Ferramenta para chunking de texto
+nltk
+
+# Carregadores de Documentos (Document Loaders)
+pypdf # para .pdf
+python-docx # para .docx
+openpyxl # para .xlsx
+pandas # para .xlsx
+
+# Utilitário para ler o .env
+python-dotenv

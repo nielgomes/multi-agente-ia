@@ -1,26 +1,27 @@
-# 1. Imagem Base
-FROM python:3.10-slim
-
-# 2. Declara o argumento de build AQUI (depois do FROM)
-#    Agora ele estará disponível para os comandos seguintes.
+# Declara o argumento de build que será recebido do docker-compose.yml
 ARG SERVICE_PATH
 
-# 3. Diretório de Trabalho
+# Imagem Base
+FROM python:3.10-slim
+
+# Declara o argumento DEPOIS do FROM para torná-lo disponível
+ARG SERVICE_PATH
+
+# Diretório de Trabalho
 WORKDIR /app
 
-# 4. Copia de Dependências
-#    Usa o argumento para construir o caminho dinamicamente.
+# Copia de Dependências
 COPY ${SERVICE_PATH}/requirements.txt .
 
-# 5. Instalação de Dependências
+# Instalação de Dependências
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 6. Copia do Código Fonte
-#    Usa o argumento para construir o caminho dinamicamente.
+# Copia do Código Fonte
 COPY ${SERVICE_PATH}/src .
 
-# 7. Copia do Registry
+# Copia do Registry
 COPY ./registry ./registry
 
-# 8. Comando de Execução
-CMD ["flask", "run", "--host=0.0.0.0"]
+# --- MUDANÇA CRUCIAL AQUI ---
+# Comando de Execução robusto que não depende do $PATH
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0"]
