@@ -4,4 +4,4 @@ flask
 google-generativeai
 python-dotenv
 langchain-google-genai # Para os embeddings
-chromadb-client      # Para conectar ao ChromaDB
+qdrant-client

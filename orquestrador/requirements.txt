@@ -1,9 +1,15 @@
 # orquestrador/requirements.txt
+# Framework web
 flask
+
+# Para fazer chamadas HTTP para outros agentes
 requests
+
+# Bibliotecas do Google e LangChain para o agente orquestrador
 google-generativeai
-# --- Novas Bibliotecas ---
 langchain
 langchain-google-genai
 langchain-community
-qdrant-client
+
+# Para carregar variáveis de ambiente
+python-dotenv
