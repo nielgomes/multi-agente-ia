@@ -1,10 +1,6 @@
-## Como Usar os Endpoints:
+## Como Usar os Endpoints para Indexar
 
-Agora você tem muito mais flexibilidade.
-
-## Para Indexar
-
-    Um agente:
+    Um agente especifico:
     JSON
 ```
 // POST http://localhost:5005/indexar
@@ -12,7 +8,7 @@ Agora você tem muito mais flexibilidade.
     "agente": "pesquisador"
 }
 ```
-Agentes específicos:
+Um ou mais agentes específicos:
 JSON
 ```
 // POST http://localhost:5005/indexar
@@ -30,7 +26,7 @@ JSON
 ```
 Para Apagar
 
-    Um agente:
+    Um agente específico:
     JSON
 ```
 // DELETE http://localhost:5005/apagar
@@ -38,7 +34,7 @@ Para Apagar
     "agente": "pesquisador"
 }
 ```
-Agentes específicos:
+Um ou mais agentes específicos:
 JSON
 ```
 // DELETE http://localhost:5005/apagar
@@ -57,15 +53,17 @@ JSON
 
 Atualmente nosso indexer suporta nativamente arquivos `.txt` e `.pdf`.
 
-## Novos agentes
+## Endpoints de chamadas para interação:
 
-Sempre que incluir novos agentes, além de criar as pastas dele em **/agentes** e em **/registry**, lembre se de mapear uma porta para o serviço no arquivo **orquestrador/src/main.py** na função **call_agent_service** em **port_mapping**
+* Geral:
 
-### orquestrador/src/quais_modelos.py
+`http://localhost:5000/iniciar-tarefa`
 
-O arquivo `quais_modelos.py` é um script utilitário para o desenvolvedor. A sua única função é ajudá-lo a descobrir quais nomes de modelos da API da Gemini (models/gemini-1.5-pro-latest, models/embedding-001, etc.) estão disponíveis para a chave de API da Google. Você o executa manualmente no seu terminal para obter uma lista de modelos válidos que pode depois copiar e colar no campo `model_name`: dos seus ficheiros `config.json`. Ele não é chamado por nenhum outro serviço e não toma nenhuma decisão.
+* Shopee:
 
-### historico de contexto
+`http://localhost:5000/gerar_roteiro_shopee`
+
+### Histórico de contexto
 
 O projeto Multi-Agente é pronto para tratar com interações que mantenham histório, formanto do json é:
 
@@ -108,3 +106,10 @@ O projeto Multi-Agente é pronto para tratar com interações que mantenham hist
 	"resultado": "A OpenRouter oferece uma vasta gama de modelos da família GPT (desenvolvidos pela OpenAI). Aqui estão os principais, agrupados por categoria e com (...)"
 }
 ```
+## Novos agentes
+
+Sempre que incluir novos agentes, além de criar as pastas dele em **/agentes** e em **/registry**, lembre se de mapear uma porta para o serviço no arquivo **orquestrador/src/main.py** na função **call_agent_service** em **port_mapping**
+
+### orquestrador/src/quais_modelos.py
+
+O arquivo `quais_modelos.py` é um script utilitário para o desenvolvedor. A sua única função é ajudá-lo a descobrir quais nomes de modelos da API da Gemini (models/gemini-1.5-pro-latest, models/embedding-001, etc.) estão disponíveis para a chave de API da Google. Você o executa manualmente no seu terminal para obter uma lista de modelos válidos que pode depois copiar e colar no campo `model_name`: dos seus ficheiros `config.json`. Ele não é chamado por nenhum outro serviço e não toma nenhuma decisão.
