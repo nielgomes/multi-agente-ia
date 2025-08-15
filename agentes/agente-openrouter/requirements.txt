@@ -1,0 +1,6 @@
+# agents/agente-openrouter/requirements.txt
+flask
+python-dotenv
+langchain-openai # <--- O PACOTE OFICIAL E CORRETO
+pydantic<2  # Necessário para o langchain-openrouterS
+google-generativeai # Necessário para a classe de embedding

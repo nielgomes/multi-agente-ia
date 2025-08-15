@@ -56,3 +56,7 @@ JSON
 ```
 
 Atualmente nosso indexer suporta nativamente arquivos `.txt` e `.pdf`.
+
+# Novos agentes
+
+Sempre que incluir novos agentes, além de criar as pastas dele em **/agentes** e em **/registry**, lembre se de mapear uma porta para o serviço no arquivo **orquestrador/src/main.py** na função **call_agent_service** em **port_mapping**

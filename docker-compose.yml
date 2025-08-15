@@ -22,6 +22,7 @@ services:
       - agente-pesquisador
       #- agente-escritor
       #- agente-codificador
+      - agente-openrouter
       - agente-shopee
       - indexer
 
@@ -90,6 +91,22 @@ services:
     environment:
       - FLASK_DEBUG=1
       - FLASK_APP=main
+    env_file:
+      - ./.env
+  agente-openrouter:
+    build:
+      context: .
+      dockerfile: ./agentes/agente-openrouter/Dockerfile
+      args:
+        SERVICE_PATH: ./agentes/agente-openrouter
+    container_name: agente-openrouter
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5006"] # Nova porta
+    volumes:
+      - ./agentes/agente-openrouter/src/main.py:/app/main.py
+      - ./registry:/app/registry
+    environment:
+      - FLASK_APP=main
+      - FLASK_DEBUG=1
     env_file:
       - ./.env
 

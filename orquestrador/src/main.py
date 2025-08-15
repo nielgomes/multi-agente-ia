@@ -25,7 +25,11 @@ with open(os.path.join(REGISTRY_DIR, 'orquestrador', 'config.json'), 'r', encodi
 def call_agent_service(agent_name: str, task_description: str) -> str:
     """Função genérica para chamar qualquer um dos nossos microserviços de agentes."""
     print(f"🛠️  Delegando para o microserviço especialista: '{agent_name}'...")
-    port_mapping = {"pesquisador": 5001, "escritor": 5002, "codificador": 5003, "shopee": 5004}
+    port_mapping = {"pesquisador": 5001,
+                     "escritor": 5002,
+                     "codificador": 5003,
+                     "shopee": 5004,
+                     "openrouter": 5006}
     agent_port = port_mapping.get(agent_name)
     if not agent_port: return f"Erro: Agente '{agent_name}' desconhecido."
     
