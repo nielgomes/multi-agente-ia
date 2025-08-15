@@ -121,6 +121,7 @@ llm = ChatGoogleGenerativeAI(
 system_prompt = orquestrador_config.get("system_prompt", "Você é um assistente prestativo.")
 prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
+    MessagesPlaceholder(variable_name="chat_history"), # <-- Placeholder para o histórico
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad"),
 ])
@@ -132,33 +133,27 @@ agent_executor = AgentExecutor(agent=agent, tools=agent_tools, verbose=True)
 # --- 4. ROTA DA API ---
 @app.route("/iniciar-tarefa", methods=["POST"])
 def iniciar_tarefa():
-    data = request.get_json(); 
+    data = request.get_json()
     user_prompt = data.get("solicitacao")
+    # A rota agora aceita um histórico opcional
+    chat_history_raw = data.get("historico_chat", []) 
+    
     if not user_prompt: return jsonify({"erro": "O campo 'solicitacao' é obrigatório."}), 400
+
+    # Converte o histórico JSON em objetos que o LangChain entende
+    chat_history = []
+    for msg in chat_history_raw:
+        if msg.get("role") == "user":
+            chat_history.append(HumanMessage(content=msg.get("content")))
+        elif msg.get("role") == "ai":
+            chat_history.append(AIMessage(content=msg.get("content")))
+
     try:
-        result = agent_executor.invoke({"input": user_prompt})
+        # Passamos o histórico para o executor
+        result = agent_executor.invoke({
+            "input": user_prompt,
+            "chat_history": chat_history
+        })
         return jsonify({"resultado": result.get("output")})
     except Exception as e:
         return jsonify({"erro": f"Erro no executor do agente: {str(e)}"}), 500
-    
-@app.route("/gerar_roteiro_shopee", methods=["POST"])
-def gerar_roteiro_shopee():
-    """Endpoint determinístico para a tarefa do agente Shopee."""
-    data = request.get_json()
-    source_url = data.get("source_url")
-    title = data.get("title")
-    description = data.get("description")
-
-    if not all([source_url, title, description]):
-        return jsonify({"erro": "Os campos 'source_url', 'title', e 'description' são obrigatórios."}), 400
-
-    try:
-        # Chama a função wrapper diretamente, sem passar pelo AgentExecutor
-        resultado = shopee_tool_wrapper(
-            title=title,
-            description=description,
-            source_url=source_url
-        )
-        return jsonify({"resultado": resultado})
-    except Exception as e:
-        return jsonify({"erro": f"Erro ao chamar o agente Shopee: {str(e)}"}), 500
