@@ -1,7 +1,6 @@
-# agentes/agente-pesquisador/src/main.py
 import os
 import json
-from qdrant_client import QdrantClient # <--- MUDANÇA: Importa o cliente do Qdrant
+from qdrant_client import QdrantClient
 import google.generativeai as genai
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from flask import Flask, request, jsonify
@@ -10,7 +9,6 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 REGISTRY_DIR = '/app/registry'
 
-# --- MUDANÇA: Configura o cliente para o Qdrant ---
 try:
     client = QdrantClient(host='qdrant', port=6333)
     print("✅ Agente-Pesquisador: Conectado ao Qdrant com sucesso.")
@@ -30,70 +28,68 @@ except Exception as e:
     embeddings = None
 
 def build_system_prompt_from_json(config: dict) -> str:
-    # ... (Esta função não muda)
+    """Função auxiliar para montar a instrução de sistema a partir do config.json."""
     instruction = config.get("system_instruction", {})
     rules_list = instruction.get("rules", [])
     rules_text = "\n".join(rules_list)
     full_prompt = f"""# Contexto\n{instruction.get("context", "")}\n\n# Objetivo Principal\n{instruction.get("goal", "")}\n\n# Regras\n{rules_text}"""
     return full_prompt.strip()
 
-# --- ROTA PRINCIPAL (LÓGICA RAG ATUALIZADA PARA QDRANT) ---
+# --- ROTA PRINCIPAL ---
 @app.route("/executar", methods=["POST"])
 def executar_tarefa():
     if not client or not embeddings:
-        return jsonify({"erro": "Agente-Pesquisador não está pronto (Qdrant ou Embeddings falharam)."}), 503
+        return jsonify({"erro": "Agente-Pesquisador não está pronto."}), 503
 
-    data = request.get_json()
-    config_dir_name = data.get("config_dir_name")
-    user_prompt = data.get("user_prompt")
-    collection_name = f"colecao_{config_dir_name}"
-    contexto = ""
-
-    # PASSO 1: Busca no Qdrant
     try:
-        # 1.1 Vetoriza a pergunta do usuário
-        query_vector = embeddings.embed_query(user_prompt)
-        
-        # 1.2 Faz a busca por similaridade no Qdrant
-        hits = client.search(
-            collection_name=collection_name,
-            query_vector=query_vector,
-            limit=5 # Pega os 5 resultados mais próximos
-        )
-        
-        # 1.3 Extrai o texto do 'payload' dos resultados
-        if hits:
-            contexto = "\n\n".join([hit.payload['text'] for hit in hits])
-            print(f"✅ Contexto recuperado da coleção '{collection_name}' no Qdrant.")
-        else:
-            print(f"⚠️ Nenhum documento relevante encontrado.")
-    except Exception as e:
-        print(f"⚠️ Aviso: Não foi possível buscar na coleção '{collection_name}'. Erro: {e}")
+        data = request.get_json()
+        config_dir_name = data.get("config_dir_name")
+        user_prompt = data.get("user_prompt")
+        collection_name = f"colecao_{config_dir_name}"
+        contexto = ""
 
-    # O resto do fluxo (Passos 2, 3 e 4) permanece o mesmo
-    try:
+        # PASSO 1: Busca no Qdrant
+        try:
+            query_vector = embeddings.embed_query(user_prompt)
+            hits = client.search(
+                collection_name=collection_name,
+                query_vector=query_vector,
+                limit=5
+            )
+            if hits:
+                contexto = "\n\n".join([hit.payload['text'] for hit in hits])
+                print(f"✅ Contexto recuperado da coleção '{collection_name}' no Qdrant.")
+            else:
+                print(f"⚠️ Nenhum documento relevante encontrado.")
+        except Exception as e:
+            print(f"⚠️ Aviso: Não foi possível buscar na coleção '{collection_name}'. Erro: {e}")
+
+        # PASSO 2: Carrega a configuração e monta o prompt
         config_path = os.path.join(REGISTRY_DIR, config_dir_name, 'config.json')
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
+        
+        # --- CORREÇÃO APLICADA AQUI ---
+        # 2.1 - Garante que a instrução de sistema seja construída
         system_instruction = build_system_prompt_from_json(config)
         
+        # 2.2 - Carrega o template do prompt RAG do config
+        rag_prompt_template = config.get("rag_prompt_template", "Contexto: {contexto}\n\nPergunta: {user_prompt}\n\nResposta:")
+        
         if contexto:
-            final_prompt = f"""Use ESTRITAMENTE o contexto abaixo para responder a pergunta. Se a resposta não estiver no contexto, diga que não encontrou a informação na base de conhecimento.
-Contexto:
----
-{contexto}
----
-Pergunta do Usuário: {user_prompt}
-Resposta:"""
+            final_prompt = rag_prompt_template.format(contexto=contexto, user_prompt=user_prompt)
         else:
             final_prompt = user_prompt
 
+        # PASSO 3: Chama o Gemini
         model = genai.GenerativeModel(
             model_name=config.get("persona", {}).get("model_name", "gemini-1.5-pro-latest"),
-            system_instruction=system_instruction
+            system_instruction=system_instruction # Agora a variável existe
         )
         response = model.generate_content(final_prompt)
         
         return jsonify({"resultado": response.text})
+
     except Exception as e:
+        print(f"❌ Erro Crítico no Agente-Pesquisador: {e}")
         return jsonify({"erro": str(e)}), 500

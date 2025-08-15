@@ -22,7 +22,7 @@ services:
       - agente-pesquisador
       #- agente-escritor
       #- agente-codificador
-      #- agente-shopee
+      - agente-shopee
       - indexer
 
   agente-pesquisador:
