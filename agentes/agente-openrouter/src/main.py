@@ -34,7 +34,11 @@ def executar_tarefa():
             model=model_name,
             temperature=temperature,
             openai_api_base="https://openrouter.ai/api/v1", # URL Base do OpenRouter
-            openai_api_key=os.environ.get("OPENROUTER_API_KEY")
+            openai_api_key=os.environ.get("OPENROUTER_API_KEY"),
+            default_headers={
+                "HTTP-Referer": "https://github.com/nielgomes/projeto-multi-agente", # Pode ser a URL do seu projeto
+                "X-Title": "Projeto Multi-Agente" # Um título para o seu projeto
+            }
         )
         
         response = chat.invoke(user_prompt)

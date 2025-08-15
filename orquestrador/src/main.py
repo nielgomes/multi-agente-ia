@@ -9,6 +9,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import Tool
+from langchain_core.messages import HumanMessage, AIMessage
 # Pydantic é ótimo para definir argumentos de ferramentas, mas vamos usar type hints por simplicidade
 from typing import Type
 
