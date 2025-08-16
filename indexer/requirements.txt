@@ -10,19 +10,21 @@ qdrant-client
 langchain
 langchain-google-genai
 langchain-community
-
-# --- LINHA ADICIONADA ---
-# Dependência necessária para a função de embedding do ChromaDB
 google-generativeai
 
 # Ferramenta para chunking de texto
 nltk
 
 # Carregadores de Documentos (Document Loaders)
-pypdf # para .pdf
-python-docx # para .docx
-openpyxl # para .xlsx
-pandas # para .xlsx
+pypdf
+python-docx
+unstructured # Dependência para o docx loader
+openpyxl
+pandas
+lxml # para xml
+
+# Lib para detectar tipos de ficheiro
+python-magic
 
 # Utilitário para ler o .env
 python-dotenv

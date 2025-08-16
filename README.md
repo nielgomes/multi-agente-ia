@@ -112,4 +112,4 @@ Sempre que incluir novos agentes, além de criar as pastas dele em **/agentes** 
 
 ### orquestrador/src/quais_modelos.py
 
-O arquivo `quais_modelos.py` é um script utilitário para o desenvolvedor. A sua única função é ajudá-lo a descobrir quais nomes de modelos da API da Gemini (models/gemini-1.5-pro-latest, models/embedding-001, etc.) estão disponíveis para a chave de API da Google. Você o executa manualmente no seu terminal para obter uma lista de modelos válidos que pode depois copiar e colar no campo `model_name`: dos seus ficheiros `config.json`. Ele não é chamado por nenhum outro serviço e não toma nenhuma decisão.
+O arquivo `quais_modelos.py` é um script utilitário para o desenvolvedor. A sua única função é ajudá-lo a descobrir quais nomes de modelos da API da Gemini (models/gemini-2.5-pro, models/embedding-001, etc.) estão disponíveis para a chave de API da Google. Você o executa manualmente no seu terminal para obter uma lista de modelos válidos que pode depois copiar e colar no campo `model_name`: dos seus ficheiros `config.json`. Ele não é chamado por nenhum outro serviço e não toma nenhuma decisão.

@@ -83,7 +83,7 @@ def executar_tarefa():
 
         # PASSO 3: Chama o Gemini
         model = genai.GenerativeModel(
-            model_name=config.get("persona", {}).get("model_name", "gemini-1.5-pro-latest"),
+            model_name=config.get("persona", {}).get("model_name", "gemini-2.5-pro"),
             system_instruction=system_instruction # Agora a variável existe
         )
         response = model.generate_content(final_prompt)

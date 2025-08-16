@@ -92,7 +92,7 @@ def executar_tarefa():
             pass
         
         # 4. Configura o modelo dinamicamente
-        model_name = config.get("persona", {}).get("model_name", "gemini-1.5-flash")
+        model_name = config.get("persona", {}).get("model_name", "gemini-2.5-pro")
         temperature = config.get("persona", {}).get("temperature", 0.7)
         
         model = genai.GenerativeModel(

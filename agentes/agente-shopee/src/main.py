@@ -56,7 +56,7 @@ Com base estritamente nos dados acima, crie o roteiro para o vídeo.
 """
         
         model = genai.GenerativeModel(
-            model_name=config.get("persona", {}).get("model_name", "gemini-1.5-pro-latest"),
+            model_name=config.get("persona", {}).get("model_name", "gemini-2.5-pro"),
             system_instruction=system_instruction,
             generation_config={"temperature": config.get("persona", {}).get("temperature", 0.8)}
         )

@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && python -m nltk.downloader punkt \
     && python -m nltk.downloader punkt_tab
 
+# Instala a dependência de sistema 'libmagic'
+RUN apt-get update && apt-get install -y libmagic1 && rm -rf /var/lib/apt/lists/*
+
 # Copia do Código Fonte
 COPY ${SERVICE_PATH}/src .
 
