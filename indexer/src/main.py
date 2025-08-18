@@ -216,8 +216,9 @@ def indexar_agente():
                     app.logger.info("  -> Tratamento especial para youtube.txt: tratando resumo como um único chunk.")
                     summaries_text = process_youtube_file(file_path)
                     if summaries_text:
-                        # Em vez de chamar o chunker, colocamos o texto inteiro em uma lista como um único elemento.
-                        chunks = [summaries_text]
+                        app.logger.info("  -> Aplicando chunker de texto customizado no resumo do YouTube...")
+                        chunks = chunkificar_texto_completo(summaries_text)
+                        app.logger.info(f"  -> Resumo do YouTube dividido em {len(chunks)} chunks.")
                 else:
                     # Para todos os outros arquivos, mantemos o fluxo normal com o chunker.
                     chunks = load_and_process_document(file_path)
