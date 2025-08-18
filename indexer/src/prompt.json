@@ -1,0 +1,5 @@
+{
+    "youtube_native_summary_prompt": "Siga estas instruções estritamente:\n\n1. Analise o conteúdo completo deste vídeo (áudio, imagens e legendas, se disponíveis) e elabore um resumo detalhado e bem estruturado.\n\n2. Primeiro, identifique e declare o tópico principal ou o título do vídeo.\n\n3. Em seguida, crie um resumo detalhado e estruturado de todos os pontos importantes do vídeo. Organize o resumo em tópicos claros.\n\n4. REGRA: Se por qualquer motivo você não conseguir acessar ou processar o conteúdo do vídeo, responda APENAS com a frase: 'ERRO_NAO_FOI_POSSIVEL_ACESSAR_O_VIDEO' e nada mais.",
+
+    "multimodal_extraction_prompt": "Extraia todo o conteúdo textual deste ficheiro. Se for uma imagem, descreva o que vê e transcreva qualquer texto nela. Se for um áudio, transcreva o discurso. Se não conseguir extrair texto útil, responda com 'NENHUM_CONTEUDO_EXTRAIDO'."
+}

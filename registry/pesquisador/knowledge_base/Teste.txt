@@ -1,3 +1,3 @@
-Nesse contexto servi apenas para testar a criação de RAG com mais de um arquivo
+Nesse contexto serve apenas para testar a criação de RAG com mais de um arquivo
 
 Quando vc for perguntado para o que o arquivo Teste.txt serve, responda que ele é um aquivo de teste com o codinome zeta001 e que serve apenas para compor o rag de arquivos multiplos.

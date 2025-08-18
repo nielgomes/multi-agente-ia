@@ -5,6 +5,7 @@ import uuid
 import magic
 import logging # Importa a biblioteca de logging
 from flask import Flask, request, jsonify
+from google.generativeai import protos
 from qdrant_client import QdrantClient, models
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredWordDocumentLoader, UnstructuredXMLLoader, CSVLoader
@@ -14,6 +15,11 @@ from chunker_customizado import chunkificar_texto_completo
 # --- CONFIGURAÇÃO INICIAL ---
 app = Flask(__name__)
 REGISTRY_DIR = '/app/registry'
+
+# Carrega os prompts do ficheiro JSON na inicialização
+PROMPT_FILE_PATH = os.path.join(os.path.dirname(__file__), 'prompt.json')
+with open(PROMPT_FILE_PATH, 'r', encoding='utf-8') as f:
+    prompts = json.load(f)
 
 # Configura um logger mais detalhado
 logging.basicConfig(level=logging.INFO)
@@ -44,15 +50,19 @@ def extract_text_with_gemini_multimodal(file_path: str) -> str | None:
     app.logger.info(f"  -> Tentando fallback multimodal com Gemini para: {os.path.basename(file_path)}")
     try:
         gemini_file = genai.upload_file(path=file_path)
-        app.logger.info(f"  -> Ficheiro enviado para a API do Google. ID: {gemini_file.name}")
+        app.logger.info(f"  -> Arquivo enviado para a API do Google. ID: {gemini_file.name}")
         model = genai.GenerativeModel(model_name="gemini-2.5-pro")
-        response = model.generate_content(
-            ["Extraia todo o conteúdo textual deste ficheiro...", gemini_file]
-        )
+
+        # Usa o prompt carregado do indexer/src/prompt.json
+        prompt_text = prompts.get("multimodal_extraction_prompt", "Extraia o texto deste arquivo.")
+
+        response = model.generate_content([prompt_text, gemini_file])
         genai.delete_file(gemini_file.name)
+
         if "NENHUM_CONTEUDO_EXTRAIDO" in response.text:
             app.logger.warning("  -> Gemini não conseguiu extrair conteúdo textual útil.")
             return None
+        
         app.logger.info("  -> ✅ Gemini extraiu conteúdo com sucesso!")
         return response.text
     except Exception as e:
@@ -96,6 +106,62 @@ def load_and_process_document(file_path: str) -> list[str] | None:
         app.logger.info(f"  -> Documento dividido em {len(chunks)} chunks.")
         return chunks
 
+def process_youtube_file(file_path: str) -> str:
+    """
+    Lê um arquivo registry/pesquisador/knowledge_base/youtube.txt com URLs do YouTube e pede ao Gemini para resumir cada vídeo,
+    com verificações para evitar alucinações.
+    """
+    app.logger.info(f"  -> Processando arquivo de URLs do YouTube: {os.path.basename(file_path)}")
+    all_summaries = []
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            urls = [line.strip() for line in f if line.strip()]
+        
+        if not urls:
+            app.logger.warning("  -> Arquivo youtube.txt está vazio.")
+            return ""
+
+        # Carrega o prompt que será enviado JUNTO com o vídeo
+        prompt_text = prompts.get("youtube_native_summary_prompt")
+        if not prompt_text:
+            app.logger.error("  -> ❌ Chave 'youtube_native_summary_prompt' não encontrada no arquivo prompt.json.")
+            return ""
+
+        model = genai.GenerativeModel(model_name="gemini-2.5-pro")
+
+        for i, url in enumerate(urls):
+            app.logger.info(f"    -> Processando Vídeo {i+1}/{len(urls)}: {url}")
+
+            try:
+                video_part = protos.Part(
+                    file_data=protos.FileData(mime_type="video/mp4", file_uri=url)
+                )
+                text_part = protos.Part(text=prompt_text)
+                contents = [video_part, text_part]
+                # logs de chamada
+                #app.logger.info(f"      -> DADOS PARA A API | Prompt: '{prompt_text}'")
+
+                app.logger.info(f"      -> Enviando requisição multimodal para o Gemini...")
+                
+                response = model.generate_content(contents, request_options={'timeout': 400})   
+
+                # logs de resposta
+                #app.logger.info(f"      -> DADOS DA API | Resposta Recebida: '{response.text}'")
+                
+                summary = f"O conteúdo do vídeo da URL {url} foi analisado e este é o resumo: {response.text}\n\nEste texto serve como base de conhecimento sobre o conteúdo do vídeo mencionado."
+
+                # logs de indexação
+                #app.logger.info(f"      -> DADOS PARA INDEXAÇÃO | Texto Final: '{summary}'")
+
+                all_summaries.append(summary)
+                app.logger.info(f"    -> ✅ Resumo para o vídeo '{url}' gerado com sucesso.")
+            except Exception as e:
+                app.logger.error(f"    -> ❌ Falha na chamada da API para a URL '{url}'. Erro: {e}")
+        
+        return "".join(all_summaries)
+    except Exception as e:
+        app.logger.error(f"  -> ❌ Falha ao ler ou processar o arquivo youtube.txt: {e}")
+        return ""
 
 # --- ENDPOINT DE INDEXAÇÃO APRIMORADO ---
 @app.route("/indexar", methods=["POST"])
@@ -106,8 +172,8 @@ def indexar_agente():
     data = request.get_json()
     agent_name = data.get("agente")
     agent_list = data.get("agentes")
-    
     agents_to_process = []
+
     if agent_name:
         if agent_name == "*": # Caso especial para todos os agentes
             agents_to_process = [d for d in os.listdir(REGISTRY_DIR) if os.path.isdir(os.path.join(REGISTRY_DIR, d))]
@@ -140,24 +206,37 @@ def indexar_agente():
             
             for filename in os.listdir(knowledge_base_path):
                 file_path = os.path.join(knowledge_base_path, filename)
-                if os.path.isfile(file_path) and not filename.startswith('.'):
+                if not os.path.isfile(file_path) or filename.startswith('.'):
+                    continue
+
+                chunks = None
+
+                # --- NOVA LÓGICA PARA TRATAR O YOUTUBE.TXT ---
+                if filename.lower() == "youtube.txt":
+                    app.logger.info("  -> Tratamento especial para youtube.txt: tratando resumo como um único chunk.")
+                    summaries_text = process_youtube_file(file_path)
+                    if summaries_text:
+                        # Em vez de chamar o chunker, colocamos o texto inteiro em uma lista como um único elemento.
+                        chunks = [summaries_text]
+                else:
+                    # Para todos os outros arquivos, mantemos o fluxo normal com o chunker.
                     chunks = load_and_process_document(file_path)
-                    
-                    if chunks:
-                        client.upsert(
-                            collection_name=collection_name,
-                            points=models.Batch(
-                                ids=[str(uuid.uuid4()) for _ in chunks],
-                                payloads=[{"text": chunk, "source": filename} for chunk in chunks],
-                                vectors=[embeddings.embed_query(chunk) for chunk in chunks]
-                            ),
-                            wait=True
-                        )
-                        total_chunks += len(chunks)
-                        files_count += 1
-                    else:
-                        skipped_files.append({"agente": agent, "arquivo": filename})
-            
+                
+                if chunks:
+                    client.upsert(
+                        collection_name=collection_name,
+                        points=models.Batch(
+                            ids=[str(uuid.uuid4()) for _ in chunks],
+                            payloads=[{"text": chunk, "source": filename} for chunk in chunks],
+                            vectors=[embeddings.embed_query(chunk) for chunk in chunks]
+                        ),
+                        wait=True
+                    )
+                    total_chunks += len(chunks)
+                    files_count += 1
+                else:
+                    skipped_files.append({"agente": agent, "arquivo": filename})
+
             results.append({
                 "agente": agent, "status": "sucesso", 
                 "mensagem": f"Indexação concluída. {files_count} arquivos processados, {total_chunks} chunks adicionados."
