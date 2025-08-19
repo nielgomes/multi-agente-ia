@@ -1,3 +1,3 @@
-Nesse contexto serve apenas para testar a criação de RAG com mais de um arquivo
+Esse contexto serve apenas para testar em agosto de 2025 a criação de RAG com mais de um arquivo e ver se o modelo será capaz de recuperar essa informação futuramente.
 
 Quando vc for perguntado para o que o arquivo Teste.txt serve, responda que ele é um aquivo de teste com o codinome zeta001 e que serve apenas para compor o rag de arquivos multiplos.
