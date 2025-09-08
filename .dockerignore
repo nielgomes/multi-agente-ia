@@ -1,0 +1,17 @@
+# Arquivos do Git
+.git
+.gitignore
+
+# Ambientes virtuais e caches do Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Arquivo de ambiente (será gerenciado pelo Docker Compose de forma mais segura)
+.env
+
+# Pastas de configuração de editores de código
+.idea/
+.vscode/
