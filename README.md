@@ -51,7 +51,7 @@ JSON
 }
 ```
 
-Atualmente nosso indexer suporta nativamente arquivos `.txt` e `.pdf`.
+Atualmente nosso indexer suporta nativamente arquivos `.docx`, `.csv`, `.txt` e `.pdf`.
 
 ## Endpoints de chamadas para interação:
 
