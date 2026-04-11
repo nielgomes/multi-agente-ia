@@ -46,6 +46,7 @@ except Exception as e:
 
 # --- FUNÇÕES DE LÓGICA ---
 
+#extrair texto de imagem
 def extract_text_with_gemini_multimodal(file_path: str) -> str | None:
     app.logger.info(f"  -> Tentando fallback multimodal com Gemini para: {os.path.basename(file_path)}")
     try:
@@ -69,6 +70,7 @@ def extract_text_with_gemini_multimodal(file_path: str) -> str | None:
         app.logger.error(f"  -> ❌ Falha no fallback multimodal: {e}")
         return None
 
+#extrai textos de arquivos docx, pdf, txt, csv e xml
 def load_and_process_document(file_path: str) -> list[str] | None:
     app.logger.info(f"  -> Processando ficheiro: {os.path.basename(file_path)}")
     full_text, document, loader = None, None, None
@@ -106,6 +108,7 @@ def load_and_process_document(file_path: str) -> list[str] | None:
         app.logger.info(f"  -> Documento dividido em {len(chunks)} chunks.")
         return chunks
 
+#resume videos youtube com Gemini (integração nativa com youtube)
 def process_youtube_file(file_path: str) -> str:
     """
     Lê um arquivo registry/pesquisador/knowledge_base/youtube.txt com URLs do YouTube e pede ao Gemini para resumir cada vídeo,

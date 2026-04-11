@@ -245,7 +245,11 @@ POST http://localhost:5005/indexar
 }
 ```
 
+<<<<<<< HEAD
 #### Indexar Todos os Agentes
+=======
+Atualmente nosso indexer suporta nativamente arquivos `.docx`, `.csv`, `.txt` e `.pdf`.
+>>>>>>> 39eb0a5a707d04ae2c474cf3b52bdc575039aebb
 
 ```json
 {
@@ -281,6 +285,7 @@ DELETE http://localhost:5005/apagar
 }
 ```
 
+<<<<<<< HEAD
 ---
 
 ## 🛠️ Agentes Disponíveis
@@ -479,3 +484,6 @@ Este projeto está sob a licença MIT.
 ## 👤 Autor
 
 Desenvolvido por Niel Gomes
+=======
+Na pasta `knowledge_base` de cada agente dentro da pasta `registry` pode receber um arquivo com o nome de `youtube.txt`, nele você pode informar uma ou mais URLs do Youtube em linhas diferentes (uma URL por linha de texto). Ao detectar esse arquivo na pasta o modulo Indexer acionará o Gemini para ele fazer um resumo dos vídeos de cada um das URLs de forma individual e indexará no indice RAG do respectivo agente.
+>>>>>>> 39eb0a5a707d04ae2c474cf3b52bdc575039aebb

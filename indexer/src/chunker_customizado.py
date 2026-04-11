@@ -16,7 +16,7 @@ except LookupError:
     print("Download do 'punkt' concluído.")
 
 def aplicar_formatacao_inline(texto):
-    """Aplica formatação inline (`) em elementos específicos do texto."""
+    """Aplica formatação inline (`) em elementos específicos do texto como paths, variaveis e comandos."""
     texto = re.sub(r'((?<=[\s,(])(/|./)[\w./\-_]+)', r'`\1`', texto)
     texto = re.sub(r'(\$\w+)', r'`\1`', texto)
     texto = re.sub(r'(\b[A-Z_]{3,}=[\w"\./\-_]+)', r'`\1`', texto)
