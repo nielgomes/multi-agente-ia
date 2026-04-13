@@ -1,6 +1,5 @@
-# orquestrador/requirements.txt
-flask
-google-generativeai
-# Dependências específicas para raspagem de dados
-requests
-beautifulsoup4
+# agentes/agente-shopee/requirements.txt (Pinned versions)
+flask==3.1.3
+google-generativeai==0.8.6
+requests==2.33.1
+beautifulsoup4==4.13.3

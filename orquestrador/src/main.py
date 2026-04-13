@@ -4,13 +4,11 @@ import json
 import requests
 from flask import Flask, request, jsonify
 
-# LangChain e Google Imports
+# LangChain e Google Imports (updated for new LangChain API)
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.tools import Tool
+from langchain.agents import create_agent
+from langchain_core.tools import Tool
 from langchain_core.messages import HumanMessage, AIMessage
-# Pydantic é ótimo para definir argumentos de ferramentas, mas vamos usar type hints por simplicidade
 from typing import Type
 
 # --- CONFIGURAÇÃO INICIAL ---
@@ -120,15 +118,13 @@ llm = ChatGoogleGenerativeAI(
 
 # Carrega o system_prompt do config.json
 system_prompt = orquestrador_config.get("system_prompt", "Você é um assistente prestativo.")
-prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt),
-    MessagesPlaceholder(variable_name="chat_history"), # <-- Placeholder para o histórico
-    ("user", "{input}"),
-    MessagesPlaceholder(variable_name="agent_scratchpad"),
-])
 
-agent = create_tool_calling_agent(llm, agent_tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=agent_tools, verbose=True)
+# Cria o agente usando a nova API do LangChain
+agent_executor = create_agent(
+    model=llm,
+    tools=agent_tools,
+    system_prompt=system_prompt
+)
 
 
 # --- 4. ROTA DA API ---
@@ -151,10 +147,13 @@ def iniciar_tarefa():
 
     try:
         # Passamos o histórico para o executor
+        # Usando a nova API do LangChain agent
         result = agent_executor.invoke({
-            "input": user_prompt,
-            "chat_history": chat_history
+            "messages": [HumanMessage(content=user_prompt)] + chat_history
         })
-        return jsonify({"resultado": result.get("output")})
+        
+        # Extrai a resposta final
+        final_response = result["messages"][-1].content if result.get("messages") else "Desculpe, não consegui processar sua solicitação."
+        return jsonify({"resultado": final_response})
     except Exception as e:
         return jsonify({"erro": f"Erro no executor do agente: {str(e)}"}), 500
